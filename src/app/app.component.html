@@ -1,0 +1,148 @@
+<main class="main">
+  <div class="content" style="flex-direction: column; ">
+    <div class="sticky-header">
+      <h1>Task Manager</h1>
+      <div style="margin-bottom: 1rem;">
+        <button (click)="filter='all'" [disabled]="filter==='all'">All</button>
+        <button (click)="filter='active'" [disabled]="filter==='active'">Active</button>
+        <button (click)="filter='completed'" [disabled]="filter==='completed'">Completed</button>
+      </div>
+      <div class="sticky-searchbar">
+        <form (submit)="addTask()" style="position: relative; margin-bottom: 0;">
+          <input
+            type="text"
+            [(ngModel)]="newTask"
+            name="task"
+            placeholder="Add a new task"
+            required
+            autofocus
+            class="task-input search-input"
+            style="width: 100%; padding-right: 2.5rem;"
+          >
+          <button 
+            type="submit" 
+            [disabled]="!newTask" 
+            title="Add" 
+            class="add-btn-inside"
+            style="position: absolute; top:40%; right: -0.5rem; transform: translateY(-50%); height: 2.2rem; width: 2.2rem; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 50%;"
+          >
+            <i class="fa fa-plus"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+    <ul style="list-style: none; padding: 0;">
+      <li
+        *ngFor="let task of filteredTasks(); let i = index"
+        (click)="selectedTaskIndex = i"
+        [style.background]="selectedTaskIndex === i ? '#e9f1fb' : '#f5f8fa'"
+        style=" align-items: center; margin-bottom: 0.5rem; border-radius: 8px; cursor: pointer;"
+      >
+        <span
+          *ngIf="!task.editing"
+          [style.textDecoration]="task.status === 'completed' ? 'line-through' : 'none'"
+          style="flex: 1; margin-left: 0.5rem;"
+          (dblclick)="editTask(task)"
+        >
+          <!-- Show label only in 'All' filter -->
+          <span *ngIf="filter === 'all' && task.status" style="font-weight: bold; margin-right: 0.5rem;">
+            {{ task.status === 'active' ? 'Active Task' : task.status === 'completed' ? 'Completed Task' : '' }}
+          </span>
+          {{ task.title }}
+        </span>
+        <input
+      type="text"
+          *ngIf="task.editing"
+          [(ngModel)]="task.title"
+          autofocus
+          class="task-input"
+        />
+        <!-- Always show Edit and Delete -->
+<button (click)="task.editing = !task.editing; $event.stopPropagation()" title="Edit"
+  style="background: transparent; border: none; margin-left: 0.5rem; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #0078d4;">
+  <i class="fa fa-pen"></i>
+</button>
+<button (click)="removeTask(i); $event.stopPropagation()" title="Delete"
+  style="background: transparent; border: none; margin-left: 0.5rem; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #d32f2f;">
+  <i class="fa fa-trash"></i>
+</button>
+
+<!-- Only show status toggle buttons when filter is 'all' -->
+<ng-container *ngIf="filter === 'all'">
+  <!-- Active Button -->
+  <button (click)="toggleActive(task); $event.stopPropagation()" title="Toggle Active"
+    style="background: transparent; border: none; margin-left: 0.5rem; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #0078d4;">
+    <i class="fa fa-check" [style.color]="task.status === 'active' ? '#0078d4' : '#888'"></i>
+  </button>
+  <!-- Completed Button -->
+  <button (click)="toggleCompleted(task); $event.stopPropagation()" title="Toggle Completed"
+    style="background: transparent; border: none; margin-left: 0.5rem; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #43a047;">
+    <i class="fa fa-check-double" [style.color]="task.status === 'completed' ? '#43a047' : '#888'"></i>
+  </button>
+</ng-container>
+      
+        <ng-container *ngIf="task.editing">
+          <!-- Show subtask input only if showSubtaskInput is true -->
+          <div *ngIf="task.showSubtaskInput" style="display: flex; gap: 0.5rem; margin-top: 0.75rem; align-items: center;">
+            <!-- Subtask input -->
+            <input
+              [(ngModel)]="task.newSubtask"
+              placeholder="Add subtask"
+              autofocus
+              style="flex: 2; padding: 0.2rem; border: 1px solid #c7c7c7; border-radius: 6px; font-size: 1rem; background: #f9f9f9;"
+              (click)="$event.stopPropagation()"
+            />
+            <button
+              (click)="addSubtask(task, task.newSubtask ?? ''); task.newSubtask=''; $event.stopPropagation()"
+              style="padding: 0.5rem 1.1rem;"
+              title="Add Subtask">
+              <i class="fa fa-plus"></i>
+            </button>
+            <button
+              (click)="task.showSubtaskInput=false; task.newSubtask=''; $event.stopPropagation()"
+              style="padding: 0.5rem 1.1rem;"
+              title="Cancel">
+              <i class="fa fa-times"></i>
+            </button>
+          </div>
+          <!-- Button to show the input -->
+          <button *ngIf="!task.showSubtaskInput" (click)="task.showSubtaskInput=true; $event.stopPropagation()" style="margin-left: 0.5rem;" title="Add Subtask">
+           <i  class="fa fa-plus"></i>
+          </button>
+          <ul *ngIf="task.subtasks?.length" style="margin-left: 2rem; margin-top: 0.5rem;">
+            <li *ngFor="let sub of task.subtasks; let j = index" style="display: flex; align-items: center;">
+              <span 
+                style="flex: 1;"
+                [style.textDecoration]="sub.completed ? 'line-through' : 'none'">
+                {{ sub.title }}
+              </span>
+              <!-- Complete Subtask Button -->
+              <button 
+                (click)="toggleSubtaskCompleted(task, sub); $event.stopPropagation()" 
+                title="Toggle Complete"
+                style="background: transparent; border: none; margin-left: 0.5rem; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #43a047;">
+                <i class="fa fa-check" [style.color]="sub.completed ? '#43a047' : '#888'"></i>
+              </button>
+              <button (click)="removeSubtask(task, j); $event.stopPropagation()" style="margin-left: 0.5rem;" title="Delete Subtask">
+                <i class="fa fa-trash"></i>
+              </button>
+            </li>
+          </ul>
+        </ng-container>
+        <div *ngIf="!task.editing && task.subtasks?.length" style="margin-left: 0.5rem; font-size: 0.9rem; color: var(--gray-600);">
+          {{ task.subtasks?.length }} subtask{{ (task.subtasks?.length || 0) > 1 ? 's' : '' }}
+        </div>
+      </li>
+    </ul>
+    <div *ngIf="tasks.length === 0" style="color: var(--gray-700); margin-top: 1rem;">
+      No tasks yet. Add your first one!
+    </div>
+  </div>
+  <button class="save-btn-fixed" (click)="saveTasks()" title="Save all tasks">
+  <i class="fa fa-floppy-disk"></i>
+</button>
+</main>
+
+
+<router-outlet></router-outlet>
+
