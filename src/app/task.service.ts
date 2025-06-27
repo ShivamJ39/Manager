@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { Task } from './task.model'; // Adjust the import path as necessary
 @Injectable({ providedIn: 'root' })
 export class TaskService {
-  private apiUrl = 'http://localhost:5080/api/tasks'; // adjust as needed
+  private apiUrl = 'https://taskmanagerapi-d00h.onrender.com/api/tasks'; // adjust as needed
 
   constructor(private http: HttpClient) {}
 
